@@ -37,6 +37,8 @@ bool isAccessPointCreated = false;
 bool ntpInitialized = false;
 enum CONNECTION_STATE connectionState;
 
+WiFiUDP Udp;
+
 //  Flags
 bool needsHeartbeat = false;
 bool needsPwmAdjustment = false;
@@ -571,6 +573,8 @@ void handleGeneralSettings() {
       PSclient.disconnect();
 
     saveSettings();
+    ESP.reset();
+
   }
 
   fs::File f = SPIFFS.open("/pageheader.html", "r");
@@ -1110,32 +1114,6 @@ void handleSlowChanging() {
       Serial.println(server.arg(i));
     }
 */
-
-void handlePage() {
-
-  if (!is_authenticated()){
-     String header = "HTTP/1.1 301 OK\r\nLocation: /login.html\r\nCache-Control: no-cache\r\n\r\n";
-     server.sendContent(header);
-     return;
-   }
-
-   fs::File f = SPIFFS.open("/pageheader.html", "r");
-   String headerString;
-   if (f.available()) headerString = f.readString();
-   f.close();
-
-   f = SPIFFS.open("/page.html", "r");
-
-   String s, htmlString;
-
-   while (f.available()){
-     s = f.readStringUntil('\n');
-
-       htmlString+=s;
-   }
-   f.close();
-   server.send(200, "text/html", htmlString);
-}
 
 void handleNotFound(){
   String message = "File Not Found\n\n";
