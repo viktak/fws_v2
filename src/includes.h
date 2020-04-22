@@ -15,12 +15,18 @@
 #include <ArduinoOTA.h>
 #include <ESP8266WebServer.h>
 
+
 #define FS_NO_GLOBALS   //  This is needed for FS.h and SD.h together
 #include <FS.h>
 
 #include <PubSubClient.h>
 #include <EEPROM.h>
 
+#include <IRrecv.h>
+#include <IRutils.h>
+#include <IRac.h>
+#include <IRtext.h>
+#include <IRsend.h>
 #include <IRremoteESP8266.h>
 
 #include <ArduinoJson.h>
