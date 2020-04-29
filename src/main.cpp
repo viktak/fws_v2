@@ -9,10 +9,11 @@ struct pwmOutput{
   const char* name;
   uint value;
   uint desiredValue;
-} pwmOutputs[3] = {
+} pwmOutputs[4] = {
   {16, "Red",   1, 0 },
   {12, "Green", 1, 0 },
-  {13, "Blue",  1, 0 }
+  {13, "Blue",  1, 0 },
+  { 2, "White", 1, 0 }
 };
 
 //  Web server
@@ -391,6 +392,9 @@ void handleLogin(){
   if (f.available()) headerString = f.readString();
   f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
   f = SPIFFS.open("/login.html", "r");
 
   String s, htmlString;
@@ -399,6 +403,7 @@ void handleLogin(){
     s = f.readStringUntil('\n');
 
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
     if (s.indexOf("%alert%")>-1) s.replace("%alert%", msg);
 
     htmlString+=s;
@@ -422,6 +427,9 @@ void handleRoot() {
   if (f.available()) headerString = f.readString();
   f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
   f = SPIFFS.open("/index.html", "r");
 
   String FirmwareVersionString = String(FIRMWARE_VERSION) + " @ " + String(__TIME__) + " - " + String(__DATE__);
@@ -432,6 +440,7 @@ void handleRoot() {
     s = f.readStringUntil('\n');
 
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
     if (s.indexOf("%espid%")>-1) s.replace("%espid%", (String)ESP.getChipId());
     if (s.indexOf("%hardwareid%")>-1) s.replace("%hardwareid%", HARDWARE_ID);
     if (s.indexOf("%hardwareversion%")>-1) s.replace("%hardwareversion%", HARDWARE_VERSION);
@@ -473,6 +482,7 @@ void handleStatus() {
 
     //  System information
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
     if (s.indexOf("%chipid%")>-1) s.replace("%chipid%", (String)ESP.getChipId());
     if (s.indexOf("%uptime%")>-1) s.replace("%uptime%", TimeIntervalToString(millis()/1000));
     if (s.indexOf("%currenttime%")>-1) s.replace("%currenttime%", DateTimeToString(localTime));
@@ -581,6 +591,9 @@ void handleGeneralSettings() {
   if (f.available()) headerString = f.readString();
   f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
   f = SPIFFS.open("/generalsettings.html", "r");
 
   String s, htmlString, timezoneslist;
@@ -611,6 +624,7 @@ void handleGeneralSettings() {
     s = f.readStringUntil('\n');
 
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
     if (s.indexOf("%mqtt-servername%")>-1) s.replace("%mqtt-servername%", appConfig.mqttServer);
     if (s.indexOf("%mqtt-port%")>-1) s.replace("%mqtt-port%", String(appConfig.mqttPort));
     if (s.indexOf("%mqtt-topic%")>-1) s.replace("%mqtt-topic%", appConfig.mqttTopic);
@@ -653,6 +667,9 @@ void handleNetworkSettings() {
   if (f.available()) headerString = f.readString();
   f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
   f = SPIFFS.open("/networksettings.html", "r");
   String s, htmlString, wifiList;
 
@@ -668,6 +685,7 @@ void handleNetworkSettings() {
     s = f.readStringUntil('\n');
 
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
     if (s.indexOf("%wifilist%")>-1) s.replace("%wifilist%", wifiList);
       htmlString+=s;
     }
@@ -705,6 +723,9 @@ void handleTools() {
   if (f.available()) headerString = f.readString();
   f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
   f = SPIFFS.open("/tools.html", "r");
 
   String s, htmlString;
@@ -713,6 +734,7 @@ void handleTools() {
     s = f.readStringUntil('\n');
 
     if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
 
       htmlString+=s;
     }
@@ -745,7 +767,13 @@ void handleCustomColour() {
 
        itoa(i, num, DEC);
        strcat_P(name, num);
-       if (server.hasArg(name)) pwmOutputs[i].desiredValue = server.arg(name).toInt();
+       if (server.hasArg(name)){
+         pwmOutputs[i].desiredValue = server.arg(name).toInt();
+          if (PSclient.connected()){
+            PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/RESULT", "{\"PWM" + (String)i + "\":\"" + (String)pwmOutputs[i].desiredValue + "\"}" ).set_qos(0));
+          }
+
+       }
      }
 
    }
@@ -754,6 +782,9 @@ void handleCustomColour() {
    String headerString;
    if (f.available()) headerString = f.readString();
    f.close();
+
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = SPIFFS.open("/customcolour.html", "r");
 
@@ -788,6 +819,7 @@ void handleCustomColour() {
    while (f.available()){
      s = f.readStringUntil('\n');
      if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
      if (s.indexOf("%pwmlist%")>-1) s.replace("%pwmlist%", pwmlist);
      htmlString+=s;
    }
@@ -835,6 +867,9 @@ void handlePrograms() {
    if (f.available()) headerString = f.readString();
    f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
    f = SPIFFS.open("/programs.html", "r");
 
    String s, htmlString, pwmlist;
@@ -868,6 +903,7 @@ void handlePrograms() {
    while (f.available()){
      s = f.readStringUntil('\n');
      if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+     if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
      if (s.indexOf("%pwmlist%")>-1) s.replace("%pwmlist%", pwmlist);
      if (s.indexOf("%checked1%")>-1) if (appConfig.selectedProgram == 0) s.replace("%checked1%", "checked");
      if (s.indexOf("%checked2%")>-1) if (appConfig.selectedProgram == 1) s.replace("%checked2%", "checked");
@@ -918,6 +954,9 @@ void handleActivation() {
    String headerString;
    if (f.available()) headerString = f.readString();
    f.close();
+
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = SPIFFS.open("/activation.html", "r");
 
@@ -1015,6 +1054,7 @@ void handleActivation() {
    while (f.available()){
      s = f.readStringUntil('\n');
      if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
 
      if (s.indexOf("%onhourlist%")>-1) s.replace("%onhourlist%", onhourlist);
      if (s.indexOf("%onminutelist%")>-1) s.replace("%onminutelist%", onminutelist);
@@ -1074,6 +1114,9 @@ void handleSlowChanging() {
    if (f.available()) headerString = f.readString();
    f.close();
 
+  TimeChangeRule *tcr;        // Pointer to the time change rule
+  time_t localTime = myTZ.toLocal(now(), &tcr);
+
    f = SPIFFS.open("/slowchanging.html", "r");
 
    String s, htmlString, freqlist, speedlist;
@@ -1095,6 +1138,7 @@ void handleSlowChanging() {
    while (f.available()){
      s = f.readStringUntil('\n');
      if (s.indexOf("%pageheader%")>-1) s.replace("%pageheader%", headerString);
+    if (s.indexOf("%year%")>-1) s.replace("%year%", (String)year(localTime));
      if (s.indexOf("%freqlist%")>-1) s.replace("%freqlist%", freqlist);
      if (s.indexOf("%speedlist%")>-1) s.replace("%speedlist%", speedlist);
 
@@ -1219,23 +1263,6 @@ void dumpIR(decode_results *results) {
 
 }
 
-/*
-Sample message expected:
-
-{dig0:1, dig1:0, dig2:1, dig3:0, pwm0:127}
-
-or
-
-{
-  "dig0": 1,
-  "dig1": 0,
-  "dig2": 1,
-  "dig3": 0,
-  "pwm0": 127
-}
-
-Order of parameters is ignored. Whitespaces/new line characters are ignored.
-*/
 void mqtt_callback(const MQTT::Publish& pub) {
 
   Serial.print("Topic:\t\t");
@@ -1270,8 +1297,13 @@ void mqtt_callback(const MQTT::Publish& pub) {
 
     itoa(i, num, DEC);
     strcat_P(name, num);
-
-    if(doc.containsKey(name)) pwmOutputs[i].desiredValue = atoi(doc[name]);
+    
+    if ( pub.topic() == MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/cmnd/pwm" + (String)i ){
+      pwmOutputs[i].desiredValue = pub.payload_string().toInt();
+      if (PSclient.connected()){
+        PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/RESULT", "{\"PWM" + (String)i + "\":\"" + (String)pwmOutputs[i].desiredValue + "\"}" ).set_qos(0));
+      }
+    }
   }
 
   //  reset
@@ -1364,7 +1396,7 @@ void setup() {
 
   Serial.println();
 
-    server.on("/", handleRoot);
+  server.on("/", handleRoot);
   server.on("/status.html", handleStatus);
   server.on("/generalsettings.html", handleGeneralSettings);
   server.on("/networksettings.html", handleNetworkSettings);
@@ -1398,7 +1430,9 @@ void setup() {
   
   os_timer_arm(&heartbeatTimer, appConfig.heartbeatInterval * 1000, true);
   os_timer_arm(&pwmAdjustmentTimer, DEFAULT_PWM_ADJUSTMENT_SPEED, true);
-  os_timer_arm(&pwmModifierTimer, DEFAULT_PWM_CHANGE_SPEED * 1000, true);
+
+  if ( appConfig.selectedProgram )
+    os_timer_arm(&pwmModifierTimer, DEFAULT_PWM_CHANGE_SPEED * 1000, true);
 
   //  Randomizer
   srand(now());
@@ -1545,7 +1579,9 @@ void loop(){
 
           if (PSclient.connect("ESP-" + String(ESP.getChipId()), MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/STATE", 0, true, "offline" )){
             PSclient.set_callback(mqtt_callback);
-            PSclient.subscribe(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/cmnd", 0);
+            for (size_t i = 0; i < sizeof(pwmOutputs)/sizeof(pwmOutputs[0]); i++){
+              PSclient.subscribe(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/cmnd/pwm" + (String)i, 0);
+            }
 
             PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/STATE", "online" ).set_qos(0).set_retain(true));
             LogEvent(EVENTCATEGORIES::Conn, 1, "Node online", WiFi.localIP().toString());
@@ -1571,11 +1607,11 @@ void loop(){
             pwmOutputs[i].desiredValue = rand() % 1024;
             if (msg!="") msg += ",";
             msg += (String)pwmOutputs[i].desiredValue;
+            if (PSclient.connected()){
+              PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/RESULT", "{\"PWM" + (String)i + "\":\"" + (String)pwmOutputs[i].desiredValue + "\"}" ).set_qos(0));
+            }
           }
             LogEvent(EVENTCATEGORIES::PwmAutoChange, 0, "RGB values", msg);
-            if (PSclient.connected()){
-              PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/RgbColor", msg ).set_qos(0));
-            }
 
           needsPwmModify = false;
         }

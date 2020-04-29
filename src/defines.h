@@ -1,8 +1,8 @@
 #define MQTT_CUSTOMER "viktak"
 #define MQTT_PROJECT  "spiti"
 
-#define HARDWARE_ID "Fws"
-#define HARDWARE_VERSION "2.1"
+#define HARDWARE_ID "RGBW smartbulb"
+#define HARDWARE_VERSION "1.0"
 #define SOFTWARE_ID "Fws_v2"
 #define FIRMWARE_VERSION "2.2"
 
