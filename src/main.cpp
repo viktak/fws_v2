@@ -31,7 +31,6 @@ os_timer_t pwmModifierTimer;
 //  Other global variables
 decode_results results;
 config appConfig;
-char timeout = 30;
 bool isAccessPoint = false;
 bool isAccessPointCreated = false;
 bool ntpInitialized = false;
@@ -1525,14 +1524,14 @@ void loop(){
           // Initialize iteration counter
           char attempt = 0;
 
-          while ((WiFi.status() != WL_CONNECTED) && (attempt++ < timeout)) {
+          while ((WiFi.status() != WL_CONNECTED) && (attempt++ < WIFI_CONNECTION_TIMEOUT)) {
             digitalWrite(CONNECTION_STATUS_LED_GPIO, LOW);
             Serial.print(".");
             delay(50);
             digitalWrite(CONNECTION_STATUS_LED_GPIO, HIGH);
             delay(950);
           }
-          if (attempt > WIFI_CONNECTION_TIMEOUT) {
+          if (attempt >= WIFI_CONNECTION_TIMEOUT) {
             Serial.println();
             Serial.println("Could not connect to WiFi");
             delay(100);
