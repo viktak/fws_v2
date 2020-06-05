@@ -27,6 +27,7 @@ PubSubClient PSclient(wclient);
 os_timer_t heartbeatTimer;
 os_timer_t pwmAdjustmentTimer;
 os_timer_t pwmModifierTimer;
+os_timer_t accessPointTimer;
 
 //  Other global variables
 decode_results results;
@@ -35,6 +36,7 @@ bool isAccessPoint = false;
 bool isAccessPointCreated = false;
 bool ntpInitialized = false;
 enum CONNECTION_STATE connectionState;
+TimeChangeRule *tcr;        // Pointer to the time change rule
 
 WiFiUDP Udp;
 
@@ -63,6 +65,10 @@ void LogEvent(int Category, int ID, String Title, String Data){
 
     PSclient.publish(MQTT::Publish(MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/log", msg ).set_qos(0));
   }
+}
+
+void accessPointTimerCallback(void *pArg) {
+  ESP.reset();
 }
 
 void heartbeatTimerCallback(void *pArg) {
@@ -121,7 +127,7 @@ bool loadSettings(config& data) {
   }
   else
   {
-    strcpy(appConfig.ssid, "ssid");
+    strcpy(appConfig.ssid, defaultSSID);
   }
   
   if (doc["password"]){
@@ -391,7 +397,6 @@ void handleLogin(){
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   f = LittleFS.open("/login.html", "r");
@@ -426,7 +431,6 @@ void handleRoot() {
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   f = LittleFS.open("/index.html", "r");
@@ -467,7 +471,6 @@ void handleStatus() {
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   String s;
@@ -590,7 +593,6 @@ void handleGeneralSettings() {
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   f = LittleFS.open("/generalsettings.html", "r");
@@ -666,7 +668,6 @@ void handleNetworkSettings() {
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   f = LittleFS.open("/networksettings.html", "r");
@@ -722,7 +723,6 @@ void handleTools() {
   if (f.available()) headerString = f.readString();
   f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
   f = LittleFS.open("/tools.html", "r");
@@ -782,7 +782,6 @@ void handleCustomColour() {
    if (f.available()) headerString = f.readString();
    f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = LittleFS.open("/customcolour.html", "r");
@@ -866,7 +865,6 @@ void handlePrograms() {
    if (f.available()) headerString = f.readString();
    f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = LittleFS.open("/programs.html", "r");
@@ -954,7 +952,6 @@ void handleActivation() {
    if (f.available()) headerString = f.readString();
    f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = LittleFS.open("/activation.html", "r");
@@ -1113,7 +1110,6 @@ void handleSlowChanging() {
    if (f.available()) headerString = f.readString();
    f.close();
 
-  TimeChangeRule *tcr;        // Pointer to the time change rule
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
    f = LittleFS.open("/slowchanging.html", "r");
@@ -1175,7 +1171,6 @@ void handleNotFound(){
 void SendHeartbeat(){
   if (PSclient.connected()){
 
-    TimeChangeRule *tcr;        // Pointer to the time change rule
     time_t localTime = myTZ.toLocal(now(), &tcr);
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(6) + 180;
@@ -1483,7 +1478,15 @@ void loop(){
 
       Serial.print("Access point address:\t");
       Serial.println(myIP);
-    }
+    
+      Serial.println();
+      Serial.println("Note: The device will reset in 5 minutes.");
+
+
+      os_timer_setfn(&accessPointTimer, accessPointTimerCallback, NULL);
+      os_timer_arm(&accessPointTimer, ACCESS_POINT_TIMEOUT, true);
+      os_timer_disarm(&heartbeatTimer);
+}
     server.handleClient();
   }
   else{
