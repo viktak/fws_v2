@@ -1,3 +1,6 @@
+#ifndef DEFINES_H
+#define DEFINES_H
+
 #define MQTT_CUSTOMER "viktak"
 #define MQTT_PROJECT  "spiti"
 
@@ -18,3 +21,5 @@
 #define IR_SEND_GPIO -1
 
 #define ACTIVITY_LED_GPIO 4
+
+#endif
