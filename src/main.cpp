@@ -176,6 +176,7 @@ bool loadSettings(config& data) {
   }
   else
   {
+    sprintf(defaultSSID, "%s-%u", DEFAULT_MQTT_TOPIC, ESP.getChipId());
     strcpy(appConfig.mqttTopic, defaultSSID);
   }
   
@@ -249,7 +250,6 @@ bool saveSettings() {
   doc["pwmChangeSpeed"] = appConfig.pwmChangeSpeed;
 
   doc["friendlyName"] = appConfig.friendlyName;
-
   #ifdef __debugSettings
   serializeJsonPretty(doc,Serial);
   Serial.println();
@@ -279,6 +279,8 @@ void defaultSettings(){
   #endif
 
   appConfig.mqttPort = DEFAULT_MQTT_PORT;
+
+  sprintf(defaultSSID, "%s-%u", DEFAULT_MQTT_TOPIC, ESP.getChipId());
   strcpy(appConfig.mqttTopic, defaultSSID);
 
   appConfig.timeZone = 2;
@@ -370,7 +372,6 @@ String TimeIntervalToString(time_t time){
   myTime+= s;
   return myTime;
 }
-
 
 bool is_authenticated(){
   #ifdef __debugSettings
@@ -1190,7 +1191,6 @@ void handleNotFound(){
 }
 
 void SendHeartbeat(){
-
   if (PSclient.connected()){
 
     time_t localTime = myTZ.toLocal(now(), &tcr);
@@ -1218,7 +1218,7 @@ void SendHeartbeat(){
 
     serializeJson(doc, myJsonString);
 
-    PSclient.publish((MQTT_CUSTOMER + String("/") + MQTT_PROJECT + "/" + appConfig.mqttTopic + "/HEARTBEAT").c_str(), myJsonString.c_str(), 0);
+    PSclient.publish((MQTT_CUSTOMER + String("/") + MQTT_PROJECT + "/" + appConfig.mqttTopic + "/HEARTBEAT").c_str(), myJsonString.c_str(), false);
   }
 
   needsHeartbeat = false;
@@ -1359,11 +1359,9 @@ void setup() {
     Serial.println("Config loaded.");
   }
 
-  sprintf(defaultSSID, "%s-%u", appConfig.mqttTopic, ESP.getChipId());
   WiFi.hostname(defaultSSID);
 
   //  GPIOs
-
   //  outputs
   pinMode(CONNECTION_STATUS_LED_GPIO, OUTPUT);
   digitalWrite(CONNECTION_STATUS_LED_GPIO, HIGH);
@@ -1561,7 +1559,7 @@ void loop(){
         if (checkInternetConnection()) {
           // We have an Internet connection
 
-          if (! ntpInitialized) {
+          if (!ntpInitialized) {
             // We are connected to the Internet for the first time so set NTP provider
             initNTP();
 
@@ -1623,7 +1621,6 @@ void loop(){
 
           needsPwmModify = false;
         }
-
 
         if (needsHeartbeat){
           SendHeartbeat();
