@@ -491,7 +491,7 @@ void handleStatus() {
 
   time_t localTime = myTZ.toLocal(now(), &tcr);
 
-  String FirmwareVersionString = String(FIRMWARE_VERSION) + " @ " + String(__TIME__) + " - " + String(__DATE__);
+  String FirmwareVersionString = String(FIRMWARE_VERSION);// + " @ " + String(__TIME__) + " - " + String(__DATE__);
   String s;
 
   f = LittleFS.open("/status.html", "r");

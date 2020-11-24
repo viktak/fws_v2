@@ -1,0 +1,10 @@
+
+#ifndef BUILD_NUMBER
+  #define BUILD_NUMBER "2"
+#endif
+#ifndef FIRMWARE_VERSION
+  #define FIRMWARE_VERSION "v2.0.2 - 2020-11-24 18:35:36.123614"
+#endif
+#ifndef FIRMWARE_VERSION_SHORT
+  #define FIRMWARE_VERSION_SHORT "v2.0.2"
+#endif
