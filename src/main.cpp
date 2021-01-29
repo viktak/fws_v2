@@ -171,8 +171,7 @@ bool loadSettings(config& data) {
   }
   else
   {
-    sprintf(defaultSSID, "%s-%u", DEFAULT_MQTT_TOPIC, ESP.getChipId());
-    strcpy(appConfig.mqttTopic, defaultSSID);
+    sprintf(appConfig.mqttTopic, "%s-%u", DEFAULT_MQTT_TOPIC, ESP.getChipId());
   }
   
   if (doc["friendlyName"]){
@@ -222,6 +221,10 @@ bool loadSettings(config& data) {
   {
     appConfig.pwmChangeSpeed = 5;
   }
+
+  String ma = WiFi.macAddress();
+  ma.replace(":","");
+  sprintf(defaultSSID, "%s-%s", appConfig.mqttTopic, ma.substring(6, 12).c_str());
 
   return true;
 }
