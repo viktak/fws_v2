@@ -9,6 +9,7 @@
 #define SOFTWARE_ID "Fws_v2"
 //#define FIRMWARE_VERSION "2.2"
 
+#define DEBUG_SPEED 921600
 
 #define ADMIN_USERNAME "admin"
 #define ADMIN_PASSWORD "admin"
