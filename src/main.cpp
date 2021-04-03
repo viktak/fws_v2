@@ -21,6 +21,7 @@ ESP8266WebServer server(80);
 
 //  Initialize Wifi
 WiFiClient wclient;
+WiFiClientSecure secureClient;
 PubSubClient PSclient(wclient);
 
 //  Timers and their flags
@@ -1479,7 +1480,7 @@ void loop(){
 
       Serial.print("Access point address:\t");
       Serial.println(myIP);
-    
+
       Serial.println();
       Serial.println("Note: The device will reset in 5 minutes.");
 
@@ -1487,7 +1488,7 @@ void loop(){
       os_timer_setfn(&accessPointTimer, accessPointTimerCallback, NULL);
       os_timer_arm(&accessPointTimer, ACCESS_POINT_TIMEOUT, true);
       os_timer_disarm(&heartbeatTimer);
-}
+    }
     server.handleClient();
   }
   else{
@@ -1578,7 +1579,8 @@ void loop(){
         ArduinoOTA.handle();
 
         if (!PSclient.connected()) {
-          PSclient.setServer(appConfig.mqttServer, appConfig.mqttPort);
+          PSclient.setServer(appConfig.mqttServer, appConfig.mqttPort);            
+          
           if (PSclient.connect(defaultSSID, (MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/STATE").c_str(), 0, true, "offline" )){
             PSclient.setCallback(mqtt_callback);
 
@@ -1596,6 +1598,8 @@ void loop(){
         if (PSclient.connected()){
           PSclient.loop();
         }
+
+
 
         if (needsPwmAdjustment){
           for (uint i = 0; i < sizeof(pwmOutputs)/sizeof(pwmOutputs[0]); i++) {
