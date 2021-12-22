@@ -21,7 +21,6 @@ ESP8266WebServer server(80);
 
 //  Initialize Wifi
 WiFiClient wclient;
-WiFiClientSecure secureClient;
 PubSubClient PSclient(wclient);
 
 //  Timers and their flags
@@ -142,7 +141,7 @@ bool loadSettings(config& data) {
   {
     strcpy(appConfig.ssid, defaultSSID);
   }
-  
+
   if (doc["password"]){
     strcpy(appConfig.password, doc["password"]);
   }
@@ -150,7 +149,7 @@ bool loadSettings(config& data) {
   {
     strcpy(appConfig.password, DEFAULT_PASSWORD);
   }
-  
+
   if (doc["mqttServer"]){
     strcpy(appConfig.mqttServer, doc["mqttServer"]);
   }
@@ -158,7 +157,7 @@ bool loadSettings(config& data) {
   {
     strcpy(appConfig.mqttServer, DEFAULT_MQTT_SERVER);
   }
-  
+
   if (doc["mqttPort"]){
     appConfig.mqttPort = doc["mqttPort"];
   }
@@ -166,7 +165,7 @@ bool loadSettings(config& data) {
   {
     appConfig.mqttPort = DEFAULT_MQTT_PORT;
   }
-  
+
   if (doc["mqttTopic"]){
     strcpy(appConfig.mqttTopic, doc["mqttTopic"]);
   }
@@ -174,7 +173,7 @@ bool loadSettings(config& data) {
   {
     sprintf(appConfig.mqttTopic, "%s-%u", DEFAULT_MQTT_TOPIC, ESP.getChipId());
   }
-  
+
   if (doc["friendlyName"]){
     strcpy(appConfig.friendlyName, doc["friendlyName"]);
   }
@@ -182,7 +181,7 @@ bool loadSettings(config& data) {
   {
     strcpy(appConfig.friendlyName, NODE_DEFAULT_FRIENDLY_NAME);
   }
-  
+
   if (doc["timezone"]){
     appConfig.timeZone = doc["timezone"];
   }
@@ -190,7 +189,7 @@ bool loadSettings(config& data) {
   {
     appConfig.timeZone = 0;
   }
-  
+
   if (doc["heartbeatInterval"]){
     appConfig.heartbeatInterval = doc["heartbeatInterval"];
   }
@@ -198,7 +197,7 @@ bool loadSettings(config& data) {
   {
     appConfig.heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
   }
-  
+
   if (doc["selectedProgram"]){
     appConfig.selectedProgram = doc["selectedProgram"];
   }
@@ -222,10 +221,6 @@ bool loadSettings(config& data) {
   {
     appConfig.pwmChangeSpeed = 5;
   }
-
-  String ma = WiFi.macAddress();
-  ma.replace(":","");
-  sprintf(defaultSSID, "%s-%s", appConfig.mqttTopic, ma.substring(6, 12).c_str());
 
   return true;
 }
@@ -464,7 +459,7 @@ void handleRoot() {
     if (s.indexOf("%espid%")>-1) s.replace("%espid%", (String)ESP.getChipId());
     if (s.indexOf("%hardwareid%")>-1) s.replace("%hardwareid%", HARDWARE_ID);
     if (s.indexOf("%hardwareversion%")>-1) s.replace("%hardwareversion%", HARDWARE_VERSION);
-    if (s.indexOf("%softwareid%")>-1) s.replace("%softwareid%", SOFTWARE_ID);
+    if (s.indexOf("%softwareid%")>-1) s.replace("%softwareid%", FIRMWARE_ID);
     if (s.indexOf("%firmwareversion%")>-1) s.replace("%firmwareversion%", FirmwareVersionString);
 
     htmlString+=s;
@@ -506,7 +501,7 @@ void handleStatus() {
     if (s.indexOf("%chipid%")>-1) s.replace("%chipid%", (String)ESP.getChipId());
     if (s.indexOf("%hardwareid%")>-1) s.replace("%hardwareid%", HARDWARE_ID);
     if (s.indexOf("%hardwareversion%")>-1) s.replace("%hardwareversion%", HARDWARE_VERSION);
-    if (s.indexOf("%firmwareid%")>-1) s.replace("%firmwareid%", SOFTWARE_ID);
+    if (s.indexOf("%firmwareid%")>-1) s.replace("%firmwareid%", FIRMWARE_ID);
     if (s.indexOf("%firmwareversion%")>-1) s.replace("%firmwareversion%", FirmwareVersionString);
     if (s.indexOf("%uptime%")>-1) s.replace("%uptime%", TimeIntervalToString(millis()/1000));
     if (s.indexOf("%currenttime%")>-1) s.replace("%currenttime%", DateTimeToString(localTime));
@@ -517,7 +512,7 @@ void handleStatus() {
     if (s.indexOf("%freesketchspace%")>-1) s.replace("%freesketchspace%",String(ESP.getFreeSketchSpace()));
     if (s.indexOf("%friendlyname%")>-1) s.replace("%friendlyname%",appConfig.friendlyName);
     if (s.indexOf("%mqtt-topic%")>-1) s.replace("%mqtt-topic%",appConfig.mqttTopic);
-    
+
     //  Network settings
     switch (WiFi.getMode()) {
       case WIFI_AP:
@@ -582,11 +577,12 @@ void handleGeneralSettings() {
     }
 
     //  MQTT settings
-    if (server.hasArg("mqttbroker"))
-      if ((String)appConfig.mqttServer != server.arg("mqttbroker")){
-        mqttDirty = true;
-        sprintf(appConfig.mqttServer, "%s", server.arg("mqttbroker").c_str());
-        LogEvent(EVENTCATEGORIES::MqttParamChange, 1, "New MQTT broker", appConfig.mqttServer);
+    if (server.hasArg("mqttbroker")){
+        if ((String)appConfig.mqttServer != server.arg("mqttbroker")){
+            mqttDirty = true;
+            sprintf(appConfig.mqttServer, "%s", server.arg("mqttbroker").c_str());
+            LogEvent(EVENTCATEGORIES::MqttParamChange, 1, "New MQTT broker", appConfig.mqttServer);
+        }
     }
 
     if (server.hasArg("mqttport")){
@@ -596,11 +592,12 @@ void handleGeneralSettings() {
       LogEvent(EVENTCATEGORIES::MqttParamChange, 2, "New MQTT port", server.arg("mqttport").c_str());
     }
 
-    if (server.hasArg("mqtttopic"))
-      if ((String)appConfig.mqttTopic != server.arg("mqtttopic")){
-        mqttDirty = true;
-        sprintf(appConfig.mqttTopic, "%s", server.arg("mqtttopic").c_str());
-        LogEvent(EVENTCATEGORIES::MqttParamChange, 1, "New MQTT topic", appConfig.mqttTopic);
+    if (server.hasArg("mqtttopic")){
+        if ((String)appConfig.mqttTopic != server.arg("mqtttopic")){
+            mqttDirty = true;
+            sprintf(appConfig.mqttTopic, "%s", server.arg("mqtttopic").c_str());
+            LogEvent(EVENTCATEGORIES::MqttParamChange, 1, "New MQTT topic", appConfig.mqttTopic);
+        }
     }
 
     if (mqttDirty)
@@ -627,7 +624,7 @@ void handleGeneralSettings() {
   for (unsigned long i = 0; i < sizeof(tzDescriptions)/sizeof(tzDescriptions[0]); i++) {
     itoa(i, ss, DEC);
     timezoneslist+="<option ";
-    if (appConfig.timeZone == i){
+    if (appConfig.timeZone == (signed char)i){
       timezoneslist+= "selected ";
     }
     timezoneslist+= "value=\"";
@@ -1343,7 +1340,7 @@ void setup() {
 
   Serial.println("Hardware ID:      " + (String)HARDWARE_ID);
   Serial.println("Hardware version: " + (String)HARDWARE_VERSION);
-  Serial.println("Software ID:      " + (String)SOFTWARE_ID);
+  Serial.println("Software ID:      " + (String)FIRMWARE_ID);
   Serial.println("Software version: " + FirmwareVersionString);
   Serial.println();
 
@@ -1359,7 +1356,7 @@ void setup() {
     Serial.println("Config loaded.");
   }
 
-  WiFi.hostname(defaultSSID);
+  WiFi.hostname(appConfig.mqttTopic);
 
   //  GPIOs
   //  outputs
@@ -1416,11 +1413,6 @@ void setup() {
   server.on("/login.html", handleLogin);
 
   server.onNotFound(handleNotFound);
-
-  //  Web server
-  if (MDNS.begin("esp8266")) {
-    Serial.println("MDNS responder started.");
-  }
 
   //  Start HTTP (web) server
   server.begin();
@@ -1484,6 +1476,7 @@ void loop(){
       Serial.println();
       Serial.println("Note: The device will reset in 5 minutes.");
 
+      if (MDNS.begin(appConfig.mqttTopic)) Serial.println("MDNS responder started.");
 
       os_timer_setfn(&accessPointTimer, accessPointTimerCallback, NULL);
       os_timer_arm(&accessPointTimer, ACCESS_POINT_TIMEOUT, true);
@@ -1524,6 +1517,7 @@ void loop(){
           WiFi.mode(WIFI_STA);
 
           // Start connection process
+          WiFi.hostname((String)appConfig.mqttTopic);
           WiFi.begin(appConfig.ssid, appConfig.password);
 
           // Initialize iteration counter
@@ -1549,6 +1543,7 @@ void loop(){
           Serial.println(" Success!");
           Serial.print("IP address: ");
           Serial.println(WiFi.localIP());
+          if (MDNS.begin(appConfig.mqttTopic)) Serial.println("MDNS responder started.");
           connectionState = STATE_CHECK_INTERNET_CONNECTION;
         }
         break;
@@ -1579,8 +1574,7 @@ void loop(){
         ArduinoOTA.handle();
 
         if (!PSclient.connected()) {
-          PSclient.setServer(appConfig.mqttServer, appConfig.mqttPort);            
-          
+          PSclient.setServer(appConfig.mqttServer, appConfig.mqttPort);
           if (PSclient.connect(defaultSSID, (MQTT_CUSTOMER + String("/") + MQTT_PROJECT + String("/") + appConfig.mqttTopic + "/STATE").c_str(), 0, true, "offline" )){
             PSclient.setCallback(mqtt_callback);
 

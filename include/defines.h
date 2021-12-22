@@ -6,8 +6,7 @@
 
 #define HARDWARE_ID "Fws"
 #define HARDWARE_VERSION "2.1"
-#define SOFTWARE_ID "Fws_v2"
-//#define FIRMWARE_VERSION "2.2"
+#define FIRMWARE_ID "Fws_v2"
 
 #define DEBUG_SPEED 921600
 
@@ -18,8 +17,6 @@
 #define LATITUDE 37.9908997
 #define LONGITUDE 23.70332
 
-//#define DEBUG_WIFI_SSID "Gunther"
-//#define DEBUG_WIFI_PASSWORD "Mad@rtej4095!"
 #define DEBUG_WIFI_SSID "Trabant"
 #define DEBUG_WIFI_PASSWORD "Tal@lm@ny8191!"
 
