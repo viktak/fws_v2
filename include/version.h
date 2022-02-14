@@ -7,11 +7,11 @@
 ///////////////////////////////////////////////////////////////
 
 #ifndef BUILD_NUMBER
-  #define BUILD_NUMBER "587"
+  #define BUILD_NUMBER "600"
 #endif
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION "v2.0.587 - 2021-12-22 20:17:10.776869"
+  #define FIRMWARE_VERSION "v2.0.600 - 2022-01-26 08:58:58.319832"
 #endif
 #ifndef FIRMWARE_VERSION_SHORT
-  #define FIRMWARE_VERSION_SHORT "v2.0.587"
+  #define FIRMWARE_VERSION_SHORT "v2.0.600"
 #endif
